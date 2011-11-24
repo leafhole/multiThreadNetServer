@@ -1,0 +1,8 @@
+#!/bin/bash
+export PROJECT_ROOT_PATH=`pwd`
+SRC_LOG4CPLUS=$PROJECT_ROOT_PATH/3rdparty/log4cplus-1.0.4
+SRC_LIBEVENT=$PROJECT_ROOT_PATH/3rdparty/libevent-2.0.11-stable
+SRC_3RDPARTY=$PROJECT_ROOT_PATH/3rdparty/
+cd $SRC_3RDPARTY && tar xf libevent-2.0.12-stable.tar.gz  && tar xf log4cplus-1.0.4.tar.bz2
+cd $SRC_LOG4CPLUS && ./configure --prefix=$PROJECT_ROOT_PATH && make && make install && make clean
+cd $SRC_LIBEVENT&& ./configure --prefix=$PROJECT_ROOT_PATH && make && make install && make clean
