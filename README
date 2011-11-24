@@ -1,0 +1,12 @@
+connQueue: manage the conn_flag for each thread
+
+connection: each connection is going to handle event loop
+
+threads: the multi-thread to run
+
+connManager: contains the connections ready to loop .
+
+First, the main thread listen the listening socket, if there is any connection, accept it. Only the main thread set the state to be listening state, so only the main thread can enter the event drive machine's branch which called listen_state, accept.
+Second, after the main thread accept the accept(), get an socket, just dispatch it to the worker thread. when dispatching, set the socket state to be "CONN_READING". Push the cq_item into the worker's queue.
+Third, the thread is in the event_base_loop, if he got the notify of the notify_fd, it will convert the cq_item into an connection, and add the connection into the event_loop of the thread's own queue, and go on.
+4th, thread are playing in the state machine. If there is any notify on an connection, it will call the drive_machine, and going on the event_loop.
