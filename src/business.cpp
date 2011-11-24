@@ -23,7 +23,7 @@ int Business::execute(void* connectionPtr)
     Connection* connection = static_cast<Connection*>(connectionPtr);        
     //size_t length = connection->bytesAvailable();
     const char* buf = connection->getReadBuffer();
-    (Connection*)connection->setWriteBuffer(buf, strlen(buf));    
+    connection->setWriteBuffer(buf, strlen(buf));    
     return ret;
 }
 
