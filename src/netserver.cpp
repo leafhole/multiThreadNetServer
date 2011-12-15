@@ -43,7 +43,10 @@ int g_listener = 0;
 
 Logger init_logger(const char *name, int loglevel, const char *logname)
 {
+    PropertyConfigurator::doConfigure("./conf/log.conf");
     log4cplus::tstring apname = LOG4CPLUS_TEXT("TTPATTERN");
+    Logger logger  = Logger::getInstance("trace");
+/*
     Logger logger = Logger::getInstance(LOG4CPLUS_TEXT(name));
     if (logger.getAppender(apname) != NULL)
         return Logger::getInstance(LOG4CPLUS_TEXT(name));
@@ -53,11 +56,13 @@ Logger init_logger(const char *name, int loglevel, const char *logname)
 #else
     SharedAppenderPtr appender(new DailyRollingFileAppender(logname));
 #endif
+
     appender->setName(apname);
     log4cplus::tstring pattern = LOG4CPLUS_TEXT("%D{%m/%d/%y %H:%M:%S,%Q} [%t] %-5p %c{2} - %x %m");
     appender->setLayout(auto_ptr<Layout>(new PatternLayout(pattern)));
     logger.addAppender(appender);
     logger.setLogLevel(loglevel);
+*/
 
     return logger;
 
@@ -138,7 +143,8 @@ void threadLibeventProcess(int fd,short s, void* arg)
         //Connection* c = new Connection();        
         if (NULL == c )
         {
-            std::cout<<__FUNCTION__<<"\t:\tNULL Connection"<<std::endl;            
+            //std::cout<<__FUNCTION__<<"\t:\tNULL Connection"<<std::endl;            
+            LOG_ERROR(logger, "NULL Connection");           
             return;
         }
 
@@ -225,7 +231,7 @@ void* workerThread(void* arg)
     LibeventThread *th = (LibeventThread*)arg;
     
 
-    LOG_DEBUG(logger,  "workerThread run: " << th->thread_id << endl);
+    LOG_DEBUG(logger,  "workerThread run: " << th->thread_id);
     /*
       pthread_mutex_lock(&m_init_lock);
       m_init_count++;
@@ -264,7 +270,8 @@ bool NetServer::start()
             return ret;
         }
         fcntl(p[0], F_SETFL, O_NOATIME); // noatime, is just to disable the atime, set last access time when the process read this file(or pipe)
-        std::cout<<"thread:"<<i<<"\t is running."<<std::endl;
+        //std::cout<<"thread:"<<i<<"\t is running."<<std::endl;
+        LOG4CPLUS_DEBUG(logger, "thread:"<<i<<"\t is running.");
         
         LibeventThread* thread = &libeventThread[i];
         thread->notify_receive_fd = p[0];
@@ -284,7 +291,8 @@ bool NetServer::start()
         event_base_set(thread->base, &notify_event);
         if ( event_add(&notify_event, 0) == -1 )
         {
-            cout<< "can not add event: " << i << endl;            
+            //cout<< "can not add event: " << i << endl;            
+            LOG_ERROR(logger, "can not add event: " << i );
         }
         
     }
@@ -298,10 +306,10 @@ bool NetServer::start()
         pthread_attr_init(&attr);
         if ((ret = pthread_create(&libeventThread[i].thread_id, &attr, workerThread, (void*)&libeventThread[i])) != 0 )
         {
-            LOG_ERROR(logger,"pthread_create error: " << i << endl);
+            LOG_ERROR(logger,"pthread_create error: " << i);
             exit(1);
         }
-        LOG_DEBUG(logger,"pthread_create succeed: " << libeventThread[i].thread_id << endl);
+        LOG_DEBUG(logger,"pthread_create succeed: " << libeventThread[i].thread_id);
     }
 
     dispatcher->registerThreadQueue(libeventThread);
