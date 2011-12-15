@@ -34,6 +34,7 @@
 #include <time.h>
 #include <pthread.h>
 #include "common/logger.hpp"
+#include "config.hpp"
 
 using namespace log4cplus;
 
@@ -43,27 +44,13 @@ int g_listener = 0;
 
 Logger init_logger(const char *name, int loglevel, const char *logname)
 {
-    PropertyConfigurator::doConfigure("./conf/log.conf");
+    char* temp = getenv(PROJECT_ROOT_PATH);
+    string projectRootPath(temp);
+    string logConfPath = projectRootPath + CFG_LOG_PATH;
+    PropertyConfigurator::doConfigure(logConfPath);
     log4cplus::tstring apname = LOG4CPLUS_TEXT("TTPATTERN");
     Logger logger  = Logger::getInstance("trace");
-/*
-    Logger logger = Logger::getInstance(LOG4CPLUS_TEXT(name));
-    if (logger.getAppender(apname) != NULL)
-        return Logger::getInstance(LOG4CPLUS_TEXT(name));
-
-#ifdef CONSOLE_LOG
-    SharedAppenderPtr appender(new ConsoleAppender());
-#else
-    SharedAppenderPtr appender(new DailyRollingFileAppender(logname));
-#endif
-
-    appender->setName(apname);
-    log4cplus::tstring pattern = LOG4CPLUS_TEXT("%D{%m/%d/%y %H:%M:%S,%Q} [%t] %-5p %c{2} - %x %m");
-    appender->setLayout(auto_ptr<Layout>(new PatternLayout(pattern)));
-    logger.addAppender(appender);
-    logger.setLogLevel(loglevel);
-*/
-
+    //assert(false);
     return logger;
 
 }
@@ -75,7 +62,7 @@ Logger logger = init_logger("netServer", FATAL_LOG_LEVEL, "log.netServer.log");
 extern void eventHandler(int fd,short s, void* arg);
 
     
-int server_socket(const char * ip,const int port)
+int server_socket(const char * ip,const int port, int backlog)
 {
     int listener;
     struct sockaddr_in sin;
@@ -110,8 +97,8 @@ int server_socket(const char * ip,const int port)
         return -1;
     }
 
-    //if (listen(listener, g_settings.backlog)<0) {
-    if (listen(listener, 10)<0) {
+
+    if (listen(listener, backlog)<0) {
         LOG_STD_FAILED(logger,"listen error");
         return -2;
     }
@@ -140,10 +127,9 @@ void threadLibeventProcess(int fd,short s, void* arg)
         }
         
         Connection* c = instance->pop();
-        //Connection* c = new Connection();        
+
         if (NULL == c )
         {
-            //std::cout<<__FUNCTION__<<"\t:\tNULL Connection"<<std::endl;            
             LOG_ERROR(logger, "NULL Connection");           
             return;
         }
@@ -176,11 +162,11 @@ NetServer::~NetServer()
     /// good start, good end
 }
 
-bool NetServer::init(size_t tNum, size_t cqSize)
+bool NetServer::init()
 {
     bool ret = true;
-    initThread(tNum);
-    initConnQueue(cqSize);
+    initThread(serverConfig.threadNum);
+    initConnQueue(serverConfig.connQueueSize);
 
     return ret;
 }
@@ -247,14 +233,11 @@ bool NetServer::start()
     //const size_t threadNum = 5;
     //const size_t connQueueNum = 10;
 
-
-
     //initListenConnection();
-    listenSocket = server_socket("0.0.0.0", 19527);
+    listenSocket = server_socket(serverConfig.ip.c_str(), serverConfig.port, serverConfig.backlog);
     g_listener = listenSocket;
     
-    
-    
+       
     /**
      * first we need to init the thread environment, for example the event_base
      *
@@ -270,13 +253,13 @@ bool NetServer::start()
             return ret;
         }
         fcntl(p[0], F_SETFL, O_NOATIME); // noatime, is just to disable the atime, set last access time when the process read this file(or pipe)
-        //std::cout<<"thread:"<<i<<"\t is running."<<std::endl;
+
         LOG4CPLUS_DEBUG(logger, "thread:"<<i<<"\t is running.");
         
         LibeventThread* thread = &libeventThread[i];
         thread->notify_receive_fd = p[0];
         thread->notify_send_fd = p[1];
-        //thread->base = (struct event_base*) malloc(sizeof(struct event_base));
+
         thread->base = (event_base*)event_base_new();
         
         if(NULL == thread->base)
@@ -318,7 +301,6 @@ bool NetServer::start()
     
     listenConnection.init(listenSocket, ListeningState, EV_READ|EV_PERSIST, eventHandler, mainThread.base, &mainThread);    
     return event_base_dispatch(mainThread.base);
-    //return ret; TODO
 }
 
 
@@ -333,4 +315,8 @@ bool NetServer::initListenConnection()
     return ret;
 }
 
-
+void NetServer::setServerConfig(const ServerConfig& svrConfig)
+{
+    serverConfig = svrConfig;
+    threadNum = svrConfig.threadNum;
+}

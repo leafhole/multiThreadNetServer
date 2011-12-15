@@ -28,16 +28,16 @@ public:
         finish();
 
         if ((kf = g_key_file_new()) == NULL)
-            return KXSTATUS_CONFIG_G_KEY_FILE_NEW_ERROR;
+            return -1;
 
         if (g_key_file_load_from_file(kf, cfgpath, G_KEY_FILE_NONE, &err) == FALSE)
         {
             g_key_file_free(kf);
             kf = NULL;
-            return KXSTATUS_CONFIG_G_KEY_FILE_LOAD_FROM_FILE_ERROR;
+            return -1;
         }
 
-        return KXSTATUS_OK;
+        return 0;
     }
 
     bool get_boolean(const char *gname, const char *key, bool& ret, bool defval=false)
