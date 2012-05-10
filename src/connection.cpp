@@ -20,8 +20,13 @@
 #include <time.h>
 #include <pthread.h>
 
+#include<log4cplus/logger.h>
 #include "dispatcher.hpp"
 #include "connectionManager.hpp"
+
+using namespace log4cplus;
+
+extern Logger logger;
 
 Dispatcher* dispatcher;
 void eventHandler(int fd,short s, void* arg)
@@ -59,8 +64,8 @@ void Connection::accept_new_conns( const bool do_accept )
     if (do_accept) {
         listenConnection.updateEventFlag(EV_READ | EV_PERSIST);
         if ( listen( g_listener, 10 ) != 0 ) {
-            //LOG_FAILED(logger, "do_accept_new_conns listen error: " << errno);
-            std::cout<<"do_accept_new_conns listen error: " << errno<< std::endl;
+            LOG4CPLUS_ERROR(logger, "do_accept_new_conns listen error: ");
+            //std::cout<<"do_accept_new_conns listen error: " << errno<< std::endl;
             
         }
     } else {

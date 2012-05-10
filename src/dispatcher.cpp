@@ -2,11 +2,14 @@
 #include "connAttrManager.hpp"
 #include <stdio.h>
 #include <utility>
-
 #include <fcntl.h>
 #include <unistd.h>
+#include<log4cplus/logger.h>
+using namespace log4cplus;
 
 Dispatcher * Dispatcher::instance = NULL;
+extern Logger logger;
+
 Dispatcher::Dispatcher()
 {
     nextThreadIdx = 0;
@@ -33,7 +36,8 @@ void Dispatcher::dispatchConnNew(int sfd, int state, int flag)
     item->init_state = state;
     item->event_flags = flag;    
 
-    std::cout << "Dispatch to thread:" << nextThreadIdx << "\t is going to run."<<std::endl;    
+    //std::cout << "Dispatch to thread:" << nextThreadIdx << "\t is going to run."<<std::endl;    
+    LOG4CPLUS_DEBUG(logger, "Dispatch to thread:" << nextThreadIdx << "\t is going to run.");
     LibeventThread* thread = &threadQueue[nextThreadIdx];
     
     thread->pushCqItem(item);
