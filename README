@@ -1,3 +1,8 @@
+How to run it?
+sh deploy
+make 
+sh run.sh
+
 connQueue: manage the conn_flag for each thread
 
 connection: each connection is going to handle event loop
