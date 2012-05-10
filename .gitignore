@@ -1,8 +1,5 @@
 bin/
 *.log
-<<<<<<< HEAD
 .project/
 .project
-=======
 *.swp
->>>>>>> 85c7afd99092f8fec59d34337e9f64bd6f74961a
